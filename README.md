@@ -1,4 +1,4 @@
-# Actix Permissions [![travis-badge][]][travis] [![cargo-badge][]][cargo] [![license-badge][]][license] [![rust-version-badge][]][rust-version]
+# Actix Permissions [![Continuous Integration](https://github.com/eisberg-labs/actix-permissions/actions/workflows/ci.yml/badge.svg)](https://github.com/eisberg-labs/actix-permissions/actions/workflows/ci.yml) [![cargo-badge][]][cargo] [![license-badge][]][license] [![rust-version-badge][]][rust-version]
 
 Permission and input validation extension for Actix Web. Alternative to actix guard, with access to app data injections, HttpRequest and Payload.
 
@@ -69,8 +69,6 @@ async fn main() -> std::io::Result<()> {
 ```
 
 
-[travis-badge]: https://img.shields.io/travis/eisberg-labs/actix-permissions/master.svg?style=flat-square
-[travis]: https://travis-ci.org/eisberg-labs/actix-permissions
 [cargo-badge]: https://img.shields.io/crates/v/actix-permissions.svg?style=flat-square
 [cargo]: https://crates.io/crates/actix-permissions
 [license-badge]: https://img.shields.io/badge/license-MIT/Apache--2.0-lightgray.svg?style=flat-square
