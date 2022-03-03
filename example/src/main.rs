@@ -1,27 +1,17 @@
-# Actix Permissions [![travis-badge][]][travis] [![cargo-badge][]][cargo] [![license-badge][]][license] [![rust-version-badge][]][rust-version]
-
-Permission and input validation extension for Actix Web. Alternative to actix guard, with access to app data injections, HttpRequest and Payload.
-
-# Example
-Dependencies:  
-```toml
-[dependencies]
-actix-permissions = "0.1.0-beta.1"
-```
-Code:
-```rust
 use actix_permissions::{check, with};
 use actix_web::dev::*;
 use actix_web::web::Data;
 use actix_web::*;
-use serde::Serialize;
 use std::future::{ready, Ready};
 
 fn dummy_permission_check(
     req: &HttpRequest,
     _payload: &mut Payload,
 ) -> Ready<actix_web::Result<bool, actix_web::Error>> {
+    // Unecessary complicating permission check to show what it can do.
+    // You have access to request, payload, and all injected dependencies through app_data.
     let checker_service: Option<&Data<DummyService>> = req.app_data::<Data<DummyService>>();
+    // TODO: do not unwrap here
     ready(Ok(checker_service.unwrap().check(req.query_string())))
 }
 
@@ -66,14 +56,3 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
-```
-
-
-[travis-badge]: https://img.shields.io/travis/eisberg-labs/actix-permissions/master.svg?style=flat-square
-[travis]: https://travis-ci.org/eisberg-labs/actix-permissions
-[cargo-badge]: https://img.shields.io/crates/v/actix-permissions.svg?style=flat-square
-[cargo]: https://crates.io/crates/actix-permissions
-[license-badge]: https://img.shields.io/badge/license-MIT/Apache--2.0-lightgray.svg?style=flat-square
-[license]: #license
-[rust-version-badge]: https://img.shields.io/badge/rust-1.15+-blue.svg?style=flat-square
-[rust-version]: .travis.yml#L5
