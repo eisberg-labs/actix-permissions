@@ -75,9 +75,9 @@ where
     Args: FromRequest + 'static,
     F::Output: Responder,
 {
-    let new_perms = Arc::new(builder.permissions.to_vec());
+    let new_perms = Arc::new(builder.permissions);
     route.service(fn_factory(move || {
-        let new_perms_c = new_perms.clone();
+        let new_perms_c = Arc::clone(&new_perms);
         let handler = handler.clone();
         ready(Ok(PermissionService::new(new_perms_c, handler)))
     }))

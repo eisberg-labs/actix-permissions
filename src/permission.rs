@@ -6,7 +6,7 @@ pub trait Permission: CloneablePermission {
     fn call(&self, req: &HttpRequest, payload: &mut Payload) -> Ready<actix_web::Result<bool>>;
 }
 
-/// CloneablePermission trait is needed for cloning a boxed trait object
+/// A trait needed for cloning a boxed trait object
 pub trait CloneablePermission {
     fn box_clone(&self) -> Box<dyn Permission>;
 }

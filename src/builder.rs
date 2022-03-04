@@ -16,13 +16,14 @@ impl Builder {
     ///
     /// # Arguments
     /// * `permission` - permission
-    pub fn and<P>(&self, permission: P) -> Self
+    pub fn and<P>(mut self, permission: P) -> Self
     where
         P: Permission + 'static,
     {
-        let mut permissions: Vec<Box<dyn Permission>> = self.permissions.to_vec();
-        permissions.push(Box::new(permission));
-        Self { permissions }
+        self.permissions.push(Box::new(permission));
+        Self {
+            permissions: self.permissions,
+        }
     }
 }
 

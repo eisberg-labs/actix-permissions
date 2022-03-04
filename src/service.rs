@@ -56,7 +56,7 @@ where
 
     fn call(&self, args: ServiceRequest) -> Self::Future {
         let (req, mut payload) = args.into_parts();
-        let perms = self.perms.clone();
+        let perms = Arc::clone(&self.perms);
         let handler = self.handler.clone();
 
         Box::pin(async move {
