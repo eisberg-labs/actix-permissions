@@ -11,7 +11,6 @@ fn dummy_permission_check(
     // Unecessary complicating permission check to show what it can do.
     // You have access to request, payload, and all injected dependencies through app_data.
     let checker_service: Option<&Data<DummyService>> = req.app_data::<Data<DummyService>>();
-    // TODO: do not unwrap here
     ready(Ok(checker_service.unwrap().check(req.query_string())))
 }
 
@@ -22,7 +21,6 @@ fn another_dummy_permission_check(
     // Unecessary complicating permission check to show what it can do.
     // You have access to request, payload, and all injected dependencies through app_data.
     let checker_service: Option<&Data<DummyService>> = req.app_data::<Data<DummyService>>();
-    // TODO: do not unwrap here
     ready(Ok(checker_service.unwrap().check(req.query_string())))
 }
 

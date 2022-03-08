@@ -23,7 +23,7 @@
 //!
 //! #[actix_web::main]
 //! async fn main() -> std::io::Result<()> {
-//!    
+//!
 //!    HttpServer::new(|| {
 //!         App::new()
 //!             .service(web::scope("").route(
@@ -41,17 +41,20 @@
 //! }
 //! ```
 //!
-mod builder;
-pub mod permission;
-mod service;
+use std::future::ready;
+use std::sync::Arc;
+
+use actix_web::dev::fn_factory;
+use actix_web::{FromRequest, Handler, Responder, Route};
 
 use crate::builder::Builder;
 use crate::permission::Permission;
 use crate::service::PermissionService;
-use actix_web::dev::fn_factory;
-use actix_web::{FromRequest, Handler, Responder, Route};
-use std::future::ready;
-use std::sync::Arc;
+
+mod builder;
+pub mod permission;
+pub(crate) mod service;
+mod tests;
 
 /// Creates a permission builder, initiated with single permission
 ///

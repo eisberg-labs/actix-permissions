@@ -1,0 +1,10 @@
+[package]
+name = "hello-world-example"
+publish = false
+version = "0.1.0-SNAPSHOT"
+edition = "2018"
+
+[dependencies]
+actix-permissions = { path = "../.." }
+actix-web = { version = "4.0.1" }
+thiserror = "1.0"

@@ -1,0 +1,18 @@
+[package]
+name = "role-based-authorization-example"
+publish = false
+version = "0.1.0-SNAPSHOT"
+edition = "2018"
+
+[dependencies]
+actix-permissions = { path = "../.." }
+actix-web = { version = "4.0.1" }
+actix-web-httpauth = "0.6.0"
+thiserror = "1.0"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/bin/main.rs"
+name = "ums-server"
