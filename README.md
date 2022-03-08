@@ -1,7 +1,7 @@
 # Actix Permissions [![Continuous Integration](https://github.com/eisberg-labs/actix-permissions/actions/workflows/ci.yml/badge.svg)](https://github.com/eisberg-labs/actix-permissions/actions/workflows/ci.yml) [![cargo-badge][]][cargo] [![license-badge][]][license]
 
 Permission and input validation extension for Actix Web. Alternative to actix guard, with access to app data injections, HttpRequest and Payload.
-Permissions are flexible, take a look at [Examples directory](./examples) for some use cases.
+Permissions are flexible, take a look at [Examples directory](./examples) for some of the use cases.
 
 You could write a permission check like a function or like a struct.  
 This code:
@@ -91,7 +91,7 @@ async fn main() -> std::io::Result<()> {
 ## Use Cases
 Take a look at [Examples directory](./examples).
 You could use actix-permissions for role based authorization check, like in *role-based-authorization* example.  
-*hello-world* example is just proof of concept, showing how you can compose a list of permissions,
+*hello-world* example is just a proof of concept, showing how you can compose a list of permissions,
 access service request, payload and injected services.
 
 ## Contributing
