@@ -28,7 +28,7 @@ impl Permission for IsAllowed {
 Dependencies:  
 ```toml
 [dependencies]
-actix-permissions = "0.1.0"
+actix-permissions = "0.1.1"
 ```
 Code:
 ```rust
@@ -93,6 +93,11 @@ Take a look at [Examples directory](./examples).
 You could use actix-permissions for role based authorization check, like in *role-based-authorization* example.  
 *hello-world* example is just a proof of concept, showing how you can compose a list of permissions,
 access service request, payload and injected services.
+
+## Permission Deny
+By default, 403 is returned for failed permission checks. You may want to toggle between `Unauthorized` and `Forbidden`,
+maybe customize 403 forbidden messages. That's why `check_with_custom_deny` is for.
+Take a look at [role based authorization example](./examples/role-based-authorization) for more info.
 
 ## Contributing
 

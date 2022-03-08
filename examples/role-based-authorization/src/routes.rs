@@ -1,6 +1,6 @@
-use actix_permissions::{check, with};
-use actix_web::*;
+use actix_permissions::with;
 use actix_web::web::ServiceConfig;
+use actix_web::*;
 
 use crate::models::Role;
 use crate::permissions::*;
@@ -20,13 +20,22 @@ async fn index() -> Result<String, Error> {
 pub fn routes(cfg: &mut ServiceConfig) {
     cfg.route(
         "/",
-        check(web::get(), with(has_min_role(Role::User)), index, ),
-    ).route(
-        "/admin",
-        check(web::get(), with(has_min_role(Role::Administrator)), administrators_index, ),
+        check(web::get(), with(has_min_role(Role::User)), index),
     )
-        .route(
-            "/mod",
-            check(web::get(), with(has_min_role(Role::Moderator)), moderators_index, ),
-        );
+    .route(
+        "/admin",
+        check(
+            web::get(),
+            with(has_min_role(Role::Administrator)),
+            administrators_index,
+        ),
+    )
+    .route(
+        "/mod",
+        check(
+            web::get(),
+            with(has_min_role(Role::Moderator)),
+            moderators_index,
+        ),
+    );
 }
