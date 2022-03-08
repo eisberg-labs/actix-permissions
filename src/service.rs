@@ -1,13 +1,13 @@
-use crate::Permission;
-use actix_web::dev::{Service, ServiceRequest, ServiceResponse};
-use actix_web::http::StatusCode;
-use actix_web::{dev, FromRequest, Handler, HttpResponse, Responder};
-use futures_core::future::LocalBoxFuture;
 use std::convert::Infallible;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-///
+use actix_web::dev::{Payload, Service, ServiceRequest, ServiceResponse};
+use actix_web::{dev, FromRequest, Handler, HttpRequest, HttpResponse, Responder};
+use futures_core::future::LocalBoxFuture;
+
+use crate::Permission;
+
 /// Service that intercepts request, validates it with a list of permissions.
 /// If any of the permissions fail, 403 forbidden is returned.
 /// If permissions succeed, request is proxied to handler
@@ -25,6 +25,7 @@ where
     perms: Arc<Vec<Box<dyn Permission>>>,
     handler: F,
     phantom_data: PhantomData<Args>,
+    deny_handler: fn(&HttpRequest, &mut Payload) -> HttpResponse,
 }
 
 impl<F, Args> PermissionService<F, Args>
@@ -33,11 +34,16 @@ where
     Args: FromRequest,
     F::Output: Responder,
 {
-    pub fn new(perms: Arc<Vec<Box<dyn Permission>>>, handler: F) -> Self {
+    pub fn new(
+        perms: Arc<Vec<Box<dyn Permission>>>,
+        handler: F,
+        deny_handler: fn(&HttpRequest, &mut Payload) -> HttpResponse,
+    ) -> Self {
         Self {
             perms,
             handler,
             phantom_data: PhantomData::default(),
+            deny_handler,
         }
     }
 }
@@ -58,13 +64,14 @@ where
         let (req, mut payload) = args.into_parts();
         let perms = Arc::clone(&self.perms);
         let handler = self.handler.clone();
+        let deny_handler = self.deny_handler;
 
         Box::pin(async move {
             for permission in perms.iter() {
                 let result = permission.call(&req, &mut payload).await;
                 match result {
                     Ok(false) => {
-                        let response = HttpResponse::new(StatusCode::FORBIDDEN); // TODO: Forbidden or Unauthorized?
+                        let response = deny_handler(&req, &mut payload);
                         return Ok(ServiceResponse::new(req, response));
                     }
                     Err(err) => {
