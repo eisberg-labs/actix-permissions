@@ -23,7 +23,7 @@
 //!
 //! #[actix_web::main]
 //! async fn main() -> std::io::Result<()> {
-//!    
+//!
 //!    HttpServer::new(|| {
 //!         App::new()
 //!             .service(web::scope("").route(
@@ -42,8 +42,9 @@
 //! ```
 //!
 mod builder;
+mod tests;
 pub mod permission;
-mod service;
+pub(crate) mod service;
 
 use crate::builder::Builder;
 use crate::permission::Permission;
