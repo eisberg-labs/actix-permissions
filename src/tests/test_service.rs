@@ -1,15 +1,14 @@
 #[cfg(test)]
 mod tests {
+    use crate::PermissionService;
+    use actix_web::dev::{Payload, Service};
+    use actix_web::{test, Error, HttpRequest};
     use std::future::{ready, Ready};
     use std::sync::Arc;
-    use actix_web::{Error, HttpRequest, test};
-    use actix_web::dev::{Payload, Service};
-    use crate::PermissionService;
 
     async fn index() -> Result<String, Error> {
         Ok("Welcome!".to_string())
     }
-
 
     #[actix_web::test]
     async fn test_no_permission_checks_set() {
@@ -20,7 +19,6 @@ mod tests {
 
         assert!(result.is_ok())
     }
-
 
     fn deny_all(
         _req: &HttpRequest,
