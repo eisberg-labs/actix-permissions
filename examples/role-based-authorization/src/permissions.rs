@@ -13,7 +13,7 @@ pub struct RolePermissionCheck {
 
 fn custom_deny_handler(req: &HttpRequest, _payload: &mut Payload) -> HttpResponse {
     let role_exists = req.extensions().get::<Role>().is_some();
-    if role_exists {
+    if !role_exists {
         return HttpResponse::Unauthorized().body("You don't have access rights!");
     } else {
         return HttpResponse::Forbidden().body("Forbidden!");
