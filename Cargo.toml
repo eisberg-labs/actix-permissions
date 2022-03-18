@@ -17,7 +17,6 @@ path = "src/lib.rs"
 
 [dependencies]
 actix-web = "4.0.1"
-futures-core = { version = "0.3.7", default-features = false, features = ["alloc"]}
 
 [dev-dependencies]
 serde_json = "1.0"

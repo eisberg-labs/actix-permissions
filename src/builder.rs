@@ -1,11 +1,13 @@
-use crate::Permission;
+use std::future::{Future, Ready};
+
+use crate::permission::Permission;
 
 /// Permission builder
-pub struct Builder {
-    pub(crate) permissions: Vec<Box<dyn Permission + 'static>>,
+pub struct Builder<'r> {
+    pub(crate) permissions: Vec<Box<dyn Permission<'r>>>,
 }
 
-impl Builder {
+impl<'r> Builder<'r> {
     pub fn new() -> Self {
         Self {
             permissions: vec![],
@@ -18,7 +20,7 @@ impl Builder {
     /// * `permission` - permission
     pub fn and<P>(mut self, permission: P) -> Self
     where
-        P: Permission + 'static,
+        P: Permission<'r> + 'static,
     {
         self.permissions.push(Box::new(permission));
         Self {
@@ -27,7 +29,7 @@ impl Builder {
     }
 }
 
-impl Default for Builder {
+impl<'r> Default for Builder<'r> {
     fn default() -> Self {
         Self::new()
     }

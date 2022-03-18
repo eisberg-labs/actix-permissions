@@ -1,12 +1,13 @@
 use std::convert::Infallible;
+use std::future::Future;
 use std::marker::PhantomData;
+use std::process::Output;
 use std::sync::Arc;
 
 use actix_web::dev::{Payload, Service, ServiceRequest, ServiceResponse};
 use actix_web::{dev, FromRequest, Handler, HttpRequest, HttpResponse, Responder};
-use futures_core::future::LocalBoxFuture;
 
-use crate::Permission;
+use crate::permission::{Permission, PinnedFuture};
 
 /// Service that intercepts request, validates it with a list of permissions.
 /// If any of the permissions fail, 403 forbidden is returned.
@@ -16,26 +17,26 @@ use crate::Permission;
 /// * `perms` - list of permissions
 /// * `handler` - handler, a function that returns http (serializable) response
 /// * `phantom_data` - phantom data, needed to avoid warnings of unused `Args`
-pub struct PermissionService<F, Args>
+pub struct PermissionService<'r, F, Args>
 where
     F: Handler<Args>,
     Args: FromRequest,
     F::Output: Responder,
 {
-    perms: Arc<Vec<Box<dyn Permission>>>,
+    perms: Arc<Vec<Box<dyn Permission<'r>>>>,
     handler: F,
     phantom_data: PhantomData<Args>,
     deny_handler: fn(&HttpRequest, &mut Payload) -> HttpResponse,
 }
 
-impl<F, Args> PermissionService<F, Args>
+impl<'r, F, Args> PermissionService<'r, F, Args>
 where
     F: Handler<Args>,
     Args: FromRequest,
     F::Output: Responder,
 {
     pub fn new(
-        perms: Arc<Vec<Box<dyn Permission>>>,
+        perms: Arc<Vec<Box<dyn Permission<'r>>>>,
         handler: F,
         deny_handler: fn(&HttpRequest, &mut Payload) -> HttpResponse,
     ) -> Self {
@@ -48,7 +49,7 @@ where
     }
 }
 
-impl<F, Args> Service<ServiceRequest> for PermissionService<F, Args>
+impl<'r, F, Args> Service<ServiceRequest> for PermissionService<'r, F, Args>
 where
     F: Handler<Args>,
     Args: FromRequest,
@@ -56,7 +57,7 @@ where
 {
     type Response = ServiceResponse;
     type Error = Infallible;
-    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
+    type Future = PinnedFuture<'r, Result<Self::Response, Self::Error>>;
 
     dev::always_ready!();
 
@@ -68,11 +69,10 @@ where
 
         Box::pin(async move {
             for permission in perms.iter() {
-                let result = permission.call(&req, &mut payload).await;
-                match result {
+                match permission.check(&req, &mut payload).await {
                     Ok(false) => {
                         let response = deny_handler(&req, &mut payload);
-                        return Ok(ServiceResponse::new(req, response));
+                        return Ok(ServiceResponse::new(req.clone(), response));
                     }
                     Err(err) => {
                         return Ok(ServiceResponse::from_err(err, req));

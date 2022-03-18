@@ -22,10 +22,7 @@ mod tests {
         assert!(result.is_ok())
     }
 
-    fn deny_all(
-        _req: &HttpRequest,
-        _payload: &mut Payload,
-    ) -> Ready<actix_web::Result<bool, actix_web::Error>> {
+    fn deny_all(_req: &HttpRequest, _payload: &mut Payload) -> Ready<actix_web::Result<bool>> {
         ready(Ok(false))
     }
 
