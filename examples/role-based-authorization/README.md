@@ -4,9 +4,9 @@ In this example for role based permission check, basic authentication is used wi
 Each user has a different role - *Administrator, Moderator and User*.
 
 There are 3 pages served:
-- Only for Administrators `admin:1` <http://localhost:8080/admin>
-- For Moderators and higher `moderator:2` <http://localhost:8080/mod>
-- For Logged in users `user:3` <http://localhost:8080/>
+- Only for Administrators `admin:1` <http://localhost:8888/admin>
+- For Moderators and higher `moderator:2` <http://localhost:8888/mod>
+- For Logged in users `user:3` <http://localhost:8888/>
 
 # Running the App
-```cargo run``` and go to <http://localhost:8080/>
+```cargo run``` and go to <http://localhost:8888/>

@@ -1,4 +1,3 @@
-use actix_permissions::with;
 use actix_web::web::ServiceConfig;
 use actix_web::*;
 
@@ -18,24 +17,17 @@ async fn index() -> Result<String, Error> {
 }
 
 pub fn routes(cfg: &mut ServiceConfig) {
-    cfg.route(
-        "/",
-        check(web::get(), with(has_min_role(Role::User)), index),
-    )
-    .route(
-        "/admin",
-        check(
-            web::get(),
-            with(has_min_role(Role::Administrator)),
-            administrators_index,
-        ),
-    )
-    .route(
-        "/mod",
-        check(
-            web::get(),
-            with(has_min_role(Role::Moderator)),
-            moderators_index,
-        ),
-    );
+    cfg.route("/", check(web::get(), has_min_role(Role::User), index))
+        .route(
+            "/admin",
+            check(
+                web::get(),
+                has_min_role(Role::Administrator),
+                administrators_index,
+            ),
+        )
+        .route(
+            "/mod",
+            check(web::get(), has_min_role(Role::Moderator), moderators_index),
+        );
 }

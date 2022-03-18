@@ -6,19 +6,20 @@ Permissions are flexible, take a look at [Examples directory](./examples) for so
 You could write a permission check like a function or like a struct.  
 This code:
 ```rust
-fn is_allowed(
-    req: &HttpRequest,
-    payload: &mut Payload,
-) -> Ready<actix_web::Result<bool, actix_web::Error>> {
+async fn is_allowed(
+    req: HttpRequest
+) -> actix_web::Result<bool> {
     todo!();
 }
 ``` 
-is same as writing:
+is almost the same as writing:
 ```rust
 struct IsAllowed;
 
-impl Permission for IsAllowed {
-    fn call(&self, req: &HttpRequest, _payload: &mut Payload) -> Ready<actix_web::Result<bool>> {
+impl Permission<()> for IsAllowed {
+    type Future = Ready<actix_web::Result<bool>>;
+    
+    fn call(&self, req: HttpRequest, ctx: ()) -> Ready<actix_web::Result<bool>> {
         todo!();
     }
 }
@@ -28,40 +29,35 @@ impl Permission for IsAllowed {
 Dependencies:  
 ```toml
 [dependencies]
-actix-permissions = "0.1.1"
+actix-permissions = "1.0.0-beta.1"
 ```
 Code:
 ```rust
-use actix_permissions::{check, with};
-use actix_web::dev::*;
+use actix_permissions::*;
 use actix_web::web::Data;
 use actix_web::*;
-use serde::Serialize;
-use std::future::{ready, Ready};
+use serde::Deserialize;
 
-fn dummy_permission_check(
-    req: &HttpRequest,
-    _payload: &mut Payload,
-) -> Ready<actix_web::Result<bool, actix_web::Error>> {
-    let checker_service: Option<&Data<DummyService>> = req.app_data::<Data<DummyService>>();
-    ready(Ok(checker_service.unwrap().check(req.query_string())))
+#[derive(Debug, Clone, Deserialize)]
+pub struct MyStatus {
+    pub status: Option<String>,
 }
 
-fn another_dummy_permission_check(
-    req: &HttpRequest,
-    _payload: &mut Payload,
-) -> Ready<actix_web::Result<bool, actix_web::Error>> {
+async fn dummy_permission_check(
+    _req: HttpRequest,
+    dummy_service: web::Data<DummyService>,
+    data: web::Query<MyStatus>,
+) -> actix_web::Result<bool> {
     // Unecessary complicating permission check to show what it can do.
     // You have access to request, payload, and all injected dependencies through app_data.
-    let checker_service: Option<&Data<DummyService>> = req.app_data::<Data<DummyService>>();
-    ready(Ok(checker_service.unwrap().check(req.query_string())))
+    Ok(dummy_service.check(data.status.clone()))
 }
 
 struct DummyService;
 
 impl DummyService {
-    pub fn check(&self, value: &str) -> bool {
-        value.contains('q')
+    pub fn check(&self, value: Option<String>) -> bool {
+        value == Some("all".to_string())
     }
 }
 
@@ -74,24 +70,17 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .app_data(Data::new(DummyService))
-            .service(web::scope("").route(
-                "/",
-                check(
-                    web::get(),
-                    with(dummy_permission_check).and(another_dummy_permission_check),
-                    index,
-                ),
-            ))
+            .service(web::scope("").route("/", check(web::get(), dummy_permission_check, index)))
     })
-    .bind("127.0.0.1:8888")?
-    .run()
-    .await
+        .bind("127.0.0.1:8888")?
+        .run()
+        .await
 }
 ```
 ## Use Cases
 Take a look at [Examples directory](./examples).
 You could use actix-permissions for role based authorization check, like in *role-based-authorization* example.  
-*hello-world* example is just a proof of concept, showing how you can compose a list of permissions,
+*hello-world* example is just a proof of concept, showing how you can set permission,
 access service request, payload and injected services.
 
 ## Permission Deny
