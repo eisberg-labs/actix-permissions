@@ -3,10 +3,11 @@ mod tests {
     use std::future::{ready, Ready};
     use std::sync::Arc;
 
+    use crate::default_deny_handler;
+    use crate::service::PermissionService;
     use actix_web::dev::{Payload, Service};
+    use actix_web::http::StatusCode;
     use actix_web::{test, Error, HttpRequest, HttpResponse};
-
-    use crate::{default_deny_handler, PermissionService, StatusCode};
 
     async fn index() -> Result<String, Error> {
         Ok("Welcome!".to_string())

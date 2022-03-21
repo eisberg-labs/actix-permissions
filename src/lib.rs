@@ -1,3 +1,14 @@
+use actix_web::dev::Payload;
+use actix_web::http::StatusCode;
+use actix_web::{HttpRequest, HttpResponse};
+
+// #![deny(
+//     // missing_debug_implementations,
+//     // missing_docs,
+//     rust_2018_idioms,
+//     unreachable_pub,
+//     elided_lifetimes_in_paths
+// )]
 // use std::future::ready;
 // use std::sync::Arc;
 //
@@ -26,10 +37,10 @@ mod tests;
 //     Builder::new().and(permission)
 // }
 //
-// fn default_deny_handler(_req: &HttpRequest, _payload: &mut Payload) -> HttpResponse {
-//     HttpResponse::new(StatusCode::FORBIDDEN)
-// }
-//
+fn default_deny_handler(_req: &HttpRequest, _payload: &mut Payload) -> HttpResponse {
+    HttpResponse::new(StatusCode::FORBIDDEN)
+}
+
 // /// Creates a route which:
 // /// - intercepts requests and validates inputs.
 // /// - if permission checks are all true, passes through to handler.

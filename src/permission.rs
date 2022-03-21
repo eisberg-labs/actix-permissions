@@ -3,16 +3,15 @@ use actix_web::*;
 use std::future::Future;
 use std::pin::Pin;
 
-pub type PinnedFuture<'r, O> = Pin<Box<dyn Future<Output = O> + 'r>>;
-pub trait Permission<'r> {
+pub type PinnedFuture<O> = Pin<Box<dyn Future<Output = O>>>;
+pub trait Permission {
     // type Output;
     // type Future: Future<Output = Self::Output>;
-    // type Future: Future<Output = actix_web::Result<bool>> + 'r;
-    fn check(
+    fn call<'l>(
         &self,
-        req: &'r HttpRequest,
-        payload: &'r mut Payload,
-    ) -> PinnedFuture<'r, actix_web::Result<bool>>;
+        req: &'l HttpRequest,
+        payload: &'l mut Payload,
+    ) -> Pin<Box<dyn Future<Output = actix_web::Result<bool>> + 'l>>;
 }
 
 // /// A trait needed for cloning a boxed trait object
@@ -30,21 +29,18 @@ pub trait Permission<'r> {
 // }
 
 /// Magic that allows function as argument, instead of a Permission trait
-impl<'r, Func, Fut> Permission<'r> for Func
+impl<Func, Fut> Permission for Func
 where
-    Func: Fn(&'r HttpRequest, &'r mut Payload) -> Fut,
-    Fut: Future<Output = actix_web::Result<bool>>,
-    Fut: 'r,
+    Func: Fn(&HttpRequest, &mut Payload) -> Fut,
+    Fut: Future<Output = actix_web::Result<bool>> + 'static,
 {
-    // type Future = Fut;
-
     #[inline]
     #[allow(non_snake_case)]
-    fn check(
+    fn call<'l>(
         &self,
-        req: &'r HttpRequest,
-        p: &'r mut Payload,
-    ) -> PinnedFuture<'r, actix_web::Result<bool>> {
+        req: &'l HttpRequest,
+        p: &'l mut Payload,
+    ) -> Pin<Box<dyn Future<Output = actix_web::Result<bool>> + 'l>> {
         Box::pin((self)(req, p))
     }
 }

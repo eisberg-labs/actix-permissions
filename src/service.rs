@@ -17,26 +17,26 @@ use crate::permission::{Permission, PinnedFuture};
 /// * `perms` - list of permissions
 /// * `handler` - handler, a function that returns http (serializable) response
 /// * `phantom_data` - phantom data, needed to avoid warnings of unused `Args`
-pub struct PermissionService<'r, F, Args>
+pub struct PermissionService<F, Args>
 where
     F: Handler<Args>,
     Args: FromRequest,
     F::Output: Responder,
 {
-    perms: Arc<Vec<Box<dyn Permission<'r>>>>,
+    perms: Arc<Vec<Box<dyn Permission>>>,
     handler: F,
     phantom_data: PhantomData<Args>,
     deny_handler: fn(&HttpRequest, &mut Payload) -> HttpResponse,
 }
 
-impl<'r, F, Args> PermissionService<'r, F, Args>
+impl<F, Args> PermissionService<F, Args>
 where
     F: Handler<Args>,
     Args: FromRequest,
     F::Output: Responder,
 {
     pub fn new(
-        perms: Arc<Vec<Box<dyn Permission<'r>>>>,
+        perms: Arc<Vec<Box<dyn Permission>>>,
         handler: F,
         deny_handler: fn(&HttpRequest, &mut Payload) -> HttpResponse,
     ) -> Self {
@@ -49,7 +49,7 @@ where
     }
 }
 
-impl<'r, F, Args> Service<ServiceRequest> for PermissionService<'r, F, Args>
+impl<F, Args> Service<ServiceRequest> for PermissionService<F, Args>
 where
     F: Handler<Args>,
     Args: FromRequest,
@@ -57,19 +57,20 @@ where
 {
     type Response = ServiceResponse;
     type Error = Infallible;
-    type Future = PinnedFuture<'r, Result<Self::Response, Self::Error>>;
+    type Future = PinnedFuture<Result<Self::Response, Self::Error>>;
 
     dev::always_ready!();
 
     fn call(&self, args: ServiceRequest) -> Self::Future {
         let (req, mut payload) = args.into_parts();
+        // self.handle_req(&req, &mut payload)
         let perms = Arc::clone(&self.perms);
         let handler = self.handler.clone();
         let deny_handler = self.deny_handler;
 
         Box::pin(async move {
             for permission in perms.iter() {
-                match permission.check(&req, &mut payload).await {
+                match permission.call(&req, &mut payload).await {
                     Ok(false) => {
                         let response = deny_handler(&req, &mut payload);
                         return Ok(ServiceResponse::new(req.clone(), response));

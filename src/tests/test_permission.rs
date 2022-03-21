@@ -12,7 +12,7 @@ mod tests {
         let service_req = test::TestRequest::with_uri("/").to_srv_request();
         let (req, mut payload) = service_req.into_parts();
 
-        let result = always_true.check(&req, &mut payload).await;
+        let result = always_true(&req, &mut payload).await;
 
         assert!(result.is_ok());
         assert!(result.unwrap());
@@ -23,7 +23,7 @@ mod tests {
         let service_req = test::TestRequest::with_uri("/").to_srv_request();
         let (req, mut payload) = service_req.into_parts();
 
-        let result = AlwaysTrueStruct {}.check(&req, &mut payload).await;
+        let result = AlwaysTrueStruct {}.call(&req, &mut payload).await;
 
         assert!(result.is_ok());
         assert!(result.unwrap());

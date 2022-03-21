@@ -20,12 +20,21 @@ mod tests {
 
     #[actix_web::test]
     async fn test_accepts_fn() {
-        assert_eq!(Builder::new().and(always_true).permissions.len(), 1);
+        let b = Builder::new();
+        // b.and(always_true);
+        // assert_eq!(Builder::new().and(always_true).permissions.len(), 1);
     }
 
     #[actix_web::test]
     async fn test_accepts_struct() {
         let perm = AlwaysTrueStruct {};
-        assert_eq!(Builder::new().and(perm).permissions.len(), 1);
+        assert_eq!(
+            Builder::new()
+                .and(AlwaysTrueStruct {})
+                .and(AlwaysTrueStruct {})
+                .permissions
+                .len(),
+            2
+        );
     }
 }

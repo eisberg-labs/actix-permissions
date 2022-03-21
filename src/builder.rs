@@ -1,13 +1,14 @@
 use std::future::{Future, Ready};
+use std::marker::PhantomData;
 
 use crate::permission::Permission;
 
 /// Permission builder
-pub struct Builder<'r> {
-    pub(crate) permissions: Vec<Box<dyn Permission<'r>>>,
+pub struct Builder<'l> {
+    pub(crate) permissions: Vec<Box<dyn Permission + 'l>>,
 }
 
-impl<'r> Builder<'r> {
+impl<'l> Builder<'l> {
     pub fn new() -> Self {
         Self {
             permissions: vec![],
@@ -20,7 +21,7 @@ impl<'r> Builder<'r> {
     /// * `permission` - permission
     pub fn and<P>(mut self, permission: P) -> Self
     where
-        P: Permission<'r> + 'static,
+        P: Permission + 'l,
     {
         self.permissions.push(Box::new(permission));
         Self {
@@ -29,7 +30,7 @@ impl<'r> Builder<'r> {
     }
 }
 
-impl<'r> Default for Builder<'r> {
+impl<'l> Default for Builder<'l> {
     fn default() -> Self {
         Self::new()
     }
