@@ -1,41 +1,48 @@
-use actix_web::dev::*;
+//! [`Permission`] trait and function implementations.
 use actix_web::*;
-use std::future::Ready;
+use std::future::Future;
 
-pub trait Permission: CloneablePermission {
-    fn call(&self, req: &HttpRequest, payload: &mut Payload) -> Ready<actix_web::Result<bool>>;
+/// The interface used for request validation.
+pub trait Permission<Args>: Clone + 'static {
+    /// Future type that resolves to a `actix_web::Result<bool>`.
+    type Future: Future<Output = actix_web::Result<bool>>;
+
+    /// Request validation happens inside `call` function.
+    ///
+    /// # Properties
+    ///
+    /// * `req` - http request.
+    /// * `args` - arguments.
+    fn call(&self, req: HttpRequest, args: Args) -> Self::Future;
 }
 
-/// A trait needed for cloning a boxed trait object
-pub trait CloneablePermission {
-    fn box_clone(&self) -> Box<dyn Permission>;
-}
+macro_rules! factory_tuple ({ $($param:ident)* } => {
+    impl<Func, Fut, $($param,)*> Permission<($($param,)*)> for Func
+    where
+        Func: Fn(HttpRequest, $($param),*) -> Fut + Clone + 'static,
+        Fut: Future<Output = actix_web::Result<bool>>,
+    {
+        type Future = Fut;
 
-impl<T> CloneablePermission for T
-where
-    T: Permission + Clone + 'static,
-{
-    fn box_clone(&self) -> Box<dyn Permission> {
-        Box::new(self.clone())
+
+        #[inline]
+        #[allow(non_snake_case)]
+        fn call(&self, req: HttpRequest, ($($param,)*): ($($param,)*)) -> Self::Future {
+            (self)(req, $($param,)*)
+        }
     }
-}
+});
 
-/// Magic that allows function as argument, instead of a Permission trait
-impl<Func> Permission for Func
-where
-    Func: Fn(&HttpRequest, &mut Payload) -> Ready<actix_web::Result<bool>>,
-    Func: Clone,
-    Func: 'static,
-{
-    #[inline]
-    #[allow(non_snake_case)]
-    fn call(&self, req: &HttpRequest, p: &mut Payload) -> Ready<actix_web::Result<bool>> {
-        (self)(req, p)
-    }
-}
-
-impl Clone for Box<dyn Permission> {
-    fn clone(&self) -> Box<dyn Permission> {
-        self.box_clone()
-    }
-}
+factory_tuple! {}
+factory_tuple! { A }
+factory_tuple! { A B }
+factory_tuple! { A B C }
+factory_tuple! { A B C D }
+factory_tuple! { A B C D E }
+factory_tuple! { A B C D E F }
+factory_tuple! { A B C D E F G }
+factory_tuple! { A B C D E F G H }
+factory_tuple! { A B C D E F G H I }
+factory_tuple! { A B C D E F G H I J }
+factory_tuple! { A B C D E F G H I J K }
+factory_tuple! { A B C D E F G H I J K L }

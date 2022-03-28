@@ -1,99 +1,119 @@
+//! [`PermissionService`] struct and `Service<ServiceRequest>` implementation.
 use std::convert::Infallible;
+use std::future::Future;
 use std::marker::PhantomData;
+use std::pin::Pin;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::task::{Context, Poll};
 
-use actix_web::dev::{Payload, Service, ServiceRequest, ServiceResponse};
-use actix_web::{dev, FromRequest, Handler, HttpRequest, HttpResponse, Responder};
-use futures_core::future::LocalBoxFuture;
+use crate::permission::Permission;
+use actix_web::dev::*;
+use actix_web::*;
 
-use crate::Permission;
-
-/// Service that intercepts request, validates it with a list of permissions.
-/// If any of the permissions fail, 403 forbidden is returned.
-/// If permissions succeed, request is proxied to handler
+/// Service that intercepts a request and validates it with a permission.
+/// If permission fails, `deny_handler` is called.
+/// If permission succeeds, request is proxied to `handler`.
 ///
 /// # Properties
-/// * `perms` - list of permissions
-/// * `handler` - handler, a function that returns http (serializable) response
-/// * `phantom_data` - phantom data, needed to avoid warnings of unused `Args`
-pub struct PermissionService<F, Args>
+/// * `handler` - handler, a function that returns http (serializable) response.
+/// * `pd_handler` - marker for handler type args, needed to avoid warnings of unused `Args`.
+/// * `deny_handler` - function argument, called when permission check is false.
+/// * `permission` - permission
+/// * `pd_permission` - marker for permission type args, needed to avoid warnings of unused `P1Args`.
+/// * `ready` - flag that tells if future in `call` is completed or pending.
+pub struct PermissionService<F, Args, P1, P1Args>
 where
     F: Handler<Args>,
     Args: FromRequest,
     F::Output: Responder,
+    P1: Permission<P1Args>,
+    P1Args: FromRequest,
 {
-    perms: Arc<Vec<Box<dyn Permission>>>,
     handler: F,
-    phantom_data: PhantomData<Args>,
-    deny_handler: fn(&HttpRequest, &mut Payload) -> HttpResponse,
+    pd_handler: PhantomData<Args>,
+    deny_handler: fn(HttpRequest) -> HttpResponse,
+    permission: P1,
+    pd_permission: PhantomData<P1Args>,
+    ready: Arc<AtomicBool>,
 }
 
-impl<F, Args> PermissionService<F, Args>
+impl<F, Args, P1, P1Args> PermissionService<F, Args, P1, P1Args>
 where
     F: Handler<Args>,
     Args: FromRequest,
+    P1: Permission<P1Args>,
+    P1Args: FromRequest,
     F::Output: Responder,
 {
-    pub fn new(
-        perms: Arc<Vec<Box<dyn Permission>>>,
-        handler: F,
-        deny_handler: fn(&HttpRequest, &mut Payload) -> HttpResponse,
-    ) -> Self {
+    /// Creates new `PermissionService`.
+    pub fn new(permission: P1, handler: F, deny_handler: fn(HttpRequest) -> HttpResponse) -> Self {
         Self {
-            perms,
             handler,
-            phantom_data: PhantomData::default(),
+            pd_handler: Default::default(),
             deny_handler,
+            permission,
+            pd_permission: Default::default(),
+            ready: Arc::new(AtomicBool::new(false)),
         }
     }
 }
 
-impl<F, Args> Service<ServiceRequest> for PermissionService<F, Args>
+impl<F, Args, P1, P1Args> Service<ServiceRequest> for PermissionService<F, Args, P1, P1Args>
 where
     F: Handler<Args>,
     Args: FromRequest,
+    P1: Permission<P1Args>,
+    P1Args: FromRequest,
     F::Output: Responder,
 {
     type Response = ServiceResponse;
     type Error = Infallible;
-    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
 
-    dev::always_ready!();
+    fn poll_ready(&self, _: &mut Context<'_>) -> Poll<std::result::Result<(), Self::Error>> {
+        if self.ready.load(Ordering::Relaxed) {
+            Poll::Ready(Ok(()))
+        } else {
+            Poll::Pending
+        }
+    }
 
     fn call(&self, args: ServiceRequest) -> Self::Future {
-        let (req, mut payload) = args.into_parts();
-        let perms = Arc::clone(&self.perms);
         let handler = self.handler.clone();
         let deny_handler = self.deny_handler;
-
+        let permission = self.permission.clone();
+        let ready = self.ready.clone();
         Box::pin(async move {
-            for permission in perms.iter() {
-                let result = permission.call(&req, &mut payload).await;
-                match result {
-                    Ok(false) => {
-                        let response = deny_handler(&req, &mut payload);
-                        return Ok(ServiceResponse::new(req, response));
-                    }
-                    Err(err) => {
-                        return Ok(ServiceResponse::from_err(err, req));
-                    }
-                    Ok(_) => {
-                        // Do nothing
+            let (req, mut payload) = args.into_parts();
+
+            let service_response = match P1Args::from_request(&req, &mut payload).await {
+                Err(err) => ServiceResponse::new(req, HttpResponse::from_error(err)),
+                Ok(data) => {
+                    let permission_check_result = permission.call(req.clone(), data).await;
+                    match permission_check_result {
+                        Ok(true) => match Args::from_request(&req, &mut payload).await {
+                            Err(err) => ServiceResponse::new(req, HttpResponse::from_error(err)),
+                            Ok(data) => {
+                                let handler_response = handler
+                                    .call(data)
+                                    .await
+                                    .respond_to(&req)
+                                    .map_into_boxed_body();
+                                ServiceResponse::new(req, handler_response)
+                            }
+                        },
+                        Ok(false) => {
+                            let response = deny_handler(req.clone());
+                            ServiceResponse::new(req, response)
+                        }
+                        Err(err) => ServiceResponse::from_err(err, req),
                     }
                 }
-            }
-
-            let res = match Args::from_request(&req, &mut payload).await {
-                Err(err) => HttpResponse::from_error(err),
-
-                Ok(data) => handler
-                    .call(data)
-                    .await
-                    .respond_to(&req)
-                    .map_into_boxed_body(),
             };
 
-            Ok(ServiceResponse::new(req, res))
+            ready.store(true, Ordering::Relaxed);
+            Ok(service_response)
         })
     }
 }

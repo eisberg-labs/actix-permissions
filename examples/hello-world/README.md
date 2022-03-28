@@ -1,7 +1,7 @@
 # Hello World Example
 
-In this example showing how you can compose a list of permissions,
-access service request, payload and injected services.
+In this example showing how you can compose a permission,
+access request properties and injected services.
 
 # Running the App
-```cargo run``` and go to <http://localhost:8080/>, then try <http://localhost:8080/?q>.
+```cargo run``` and go to <http://localhost:8888/>, then try <http://localhost:8888/?status=all>.
