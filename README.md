@@ -29,7 +29,7 @@ impl Permission<()> for IsAllowed {
 Dependencies:  
 ```toml
 [dependencies]
-actix-permissions = "1.0.0-beta.1"
+actix-permissions = "1.0.0"
 ```
 Code:
 ```rust
