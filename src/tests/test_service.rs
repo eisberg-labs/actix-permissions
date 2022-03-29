@@ -51,10 +51,6 @@ mod tests {
 
     #[actix_web::test]
     async fn test_deny_all_default_handler() {
-        fn custom_deny_handler(_req: HttpRequest) -> HttpResponse {
-            HttpResponse::new(StatusCode::FORBIDDEN)
-        }
-
         async fn deny_all(_req: HttpRequest) -> actix_web::Result<bool> {
             Ok(false)
         }
