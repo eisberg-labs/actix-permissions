@@ -46,9 +46,9 @@ pub fn check_with_custom_deny<F, Args, P1, P1Args>(
 ) -> Route
 where
     F: Handler<Args>,
-    Args: FromRequest + 'static + Clone,
+    Args: FromRequest + 'static,
     P1: Permission<P1Args>,
-    P1Args: FromRequest + 'static + Clone,
+    P1Args: FromRequest + 'static,
     F::Output: Responder,
 {
     route.service(fn_factory(move || {
