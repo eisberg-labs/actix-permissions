@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests {
+    use crate::builder::default_deny_handler;
     use actix_web::dev::Service;
     use actix_web::http::StatusCode;
     use actix_web::{test, web, Error, HttpRequest, HttpResponse};
     use serde::Deserialize;
 
-    use crate::default_deny_handler;
     use crate::service::PermissionService;
 
     async fn index() -> Result<String, Error> {
