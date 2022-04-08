@@ -26,9 +26,9 @@ fn default_deny_handler(_req: HttpRequest) -> HttpResponse {
 pub fn check<F, Args, P1, P1Args>(route: Route, permission: P1, handler: F) -> Route
 where
     F: Handler<Args>,
-    Args: FromRequest + 'static + Clone,
+    Args: FromRequest + 'static,
     P1: Permission<P1Args>,
-    P1Args: FromRequest + 'static + Clone,
+    P1Args: FromRequest + 'static,
     F::Output: Responder,
 {
     check_with_custom_deny(route, permission, handler, default_deny_handler)
