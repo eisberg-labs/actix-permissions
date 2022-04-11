@@ -41,31 +41,31 @@ where
     F::Output: Responder,
 {
     /// Appends route to builder.
-    pub fn check<'a>(&'a mut self, route: Route) -> &'a mut Self {
+    pub fn check(&mut self, route: Route) -> &mut Self {
         self.route = Some(route);
         self
     }
 
     /// Appends permission to builder.
-    pub fn validate<'a>(&'a mut self, permission: P1) -> &'a mut Self {
+    pub fn validate(&mut self, permission: P1) -> &mut Self {
         self.permission = Some(permission);
         self
     }
 
     /// Returns new builder with custom deny
-    pub fn with_deny_handler<'a>(&'a mut self, handler: fn(HttpRequest) -> HttpResponse) -> Self {
+    pub fn with_deny_handler(&mut self, handler: fn(HttpRequest) -> HttpResponse) -> Self {
         Self {
             route: self.route.take(),
             permission: self.permission.take(),
             handler: self.handler.take(),
             deny_handler: handler,
-            pd_handler: self.pd_handler.clone(),
+            pd_handler: self.pd_handler,
             pd_permission1: Default::default(),
         }
     }
 
     /// Appends handler to builder.
-    pub fn to<'a>(&'a mut self, handler: F) -> &'a mut Self {
+    pub fn to(&mut self, handler: F) -> &mut Self {
         self.handler = Some(handler);
         self
     }
@@ -73,7 +73,7 @@ where
     /// Builds a `Route` from permission `Builder` properties.
     /// `Route` that checks a `route` if passes a `permission`, then responds with `handler`.
     /// Otherwise a `deny_handler` is called.
-    pub fn build<'a>(&mut self) -> Route {
+    pub fn build(&mut self) -> Route {
         let permission = self.permission.take().unwrap();
         let handler = self.handler.take().unwrap();
         let deny_handler = self.deny_handler;
