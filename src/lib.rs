@@ -26,7 +26,7 @@ mod tests;
 /// async fn index() -> actix_web::Result<String> {
 ///     Ok("".to_string())
 /// }
-/// permission().check(web::get()).is(permission_check).to(index).build();
+/// permission().check(web::get()).validate(permission_check).to(index).build();
 /// ```
 pub fn permission<F, Args, P1, P1Args>() -> Builder<F, Args, P1, P1Args> {
     Builder::default()
@@ -45,7 +45,7 @@ where
     P1Args: FromRequest + 'static,
     F::Output: Responder,
 {
-    permission().check(route).is(perm).to(handler).build()
+    permission().check(route).validate(perm).to(handler).build()
 }
 
 /// Creates a more flexible route than `check`, which:
@@ -69,7 +69,7 @@ where
     permission()
         .with_deny_handler(deny_handler)
         .check(route)
-        .is(perm)
+        .validate(perm)
         .to(handler)
         .build()
 }

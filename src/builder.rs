@@ -21,7 +21,7 @@ use crate::{fn_factory, Permission, PermissionService};
 ///     Ok("".to_string())
 /// }
 ///
-/// Builder::default().check(web::get()).is(permission_check).to(index);
+/// Builder::default().check(web::get()).validate(permission_check).to(index);
 /// ```
 pub struct Builder<F, Args, P1, P1Args> {
     route: Option<Route>,
@@ -47,7 +47,7 @@ where
     }
 
     /// Appends permission to builder.
-    pub fn is<'a>(&'a mut self, permission: P1) -> &'a mut Self {
+    pub fn validate<'a>(&'a mut self, permission: P1) -> &'a mut Self {
         self.permission = Some(permission);
         self
     }
