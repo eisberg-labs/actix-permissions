@@ -7,9 +7,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use crate::permission::Permission;
 use actix_web::dev::*;
+use actix_web::web::{Buf, Bytes, BytesMut};
 use actix_web::*;
+use futures_util::stream::StreamExt as _;
+
+use crate::permission::Permission;
 
 /// Service that intercepts a request and validates it with a permission.
 /// If permission fails, `deny_handler` is called.
@@ -59,6 +62,13 @@ where
     }
 }
 
+/// Converts bytes to payload stream
+pub fn get_payload(bytes: Bytes) -> Payload {
+    let mut repack_payload = actix_http::h1::Payload::create(true);
+    repack_payload.1.unread_data(bytes);
+    repack_payload.1.into()
+}
+
 impl<F, Args, P1, P1Args> Service<ServiceRequest> for PermissionService<F, Args, P1, P1Args>
 where
     F: Handler<Args>,
@@ -87,12 +97,24 @@ where
         Box::pin(async move {
             let (req, mut payload) = args.into_parts();
 
-            let service_response = match P1Args::from_request(&req, &mut payload).await {
+            // reading payload into BytesMut, so `clone` can be performed.
+            // clone is necessary because `P1Args` and `Args` both consume `Payload`.
+            let mut body = BytesMut::new();
+            while let Some(chunk) = payload.next().await {
+                body.extend_from_slice(chunk.unwrap().chunk())
+            }
+
+            let handler_body = body.clone();
+
+            let mut p1_payload = get_payload(body.freeze());
+
+            let service_response = match P1Args::from_request(&req, &mut p1_payload).await {
                 Err(err) => ServiceResponse::new(req, HttpResponse::from_error(err)),
                 Ok(data) => {
                     let permission_check_result = permission.call(req.clone(), data).await;
+                    let mut handler_payload = get_payload(handler_body.freeze());
                     match permission_check_result {
-                        Ok(true) => match Args::from_request(&req, &mut payload).await {
+                        Ok(true) => match Args::from_request(&req, &mut handler_payload).await {
                             Err(err) => ServiceResponse::new(req, HttpResponse::from_error(err)),
                             Ok(data) => {
                                 let handler_response = handler
