@@ -67,7 +67,7 @@ where
     F::Output: Responder,
 {
     permission()
-        .when_denied(deny_handler)
+        .with_deny_handler(deny_handler)
         .check(route)
         .is(perm)
         .to(handler)

@@ -52,10 +52,16 @@ where
         self
     }
 
-    /// Appends deny handler to builder.
-    pub fn when_denied<'a>(&'a mut self, handler: fn(HttpRequest) -> HttpResponse) -> &'a mut Self {
-        self.deny_handler = handler;
-        self
+    /// Returns new builder with custom deny
+    pub fn with_deny_handler<'a>(&'a mut self, handler: fn(HttpRequest) -> HttpResponse) -> Self {
+        Self {
+            route: self.route.take(),
+            permission: self.permission.take(),
+            handler: self.handler.take(),
+            deny_handler: handler,
+            pd_handler: self.pd_handler.clone(),
+            pd_permission1: Default::default(),
+        }
     }
 
     /// Appends handler to builder.
