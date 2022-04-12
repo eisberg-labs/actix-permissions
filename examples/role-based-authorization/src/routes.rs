@@ -17,17 +17,28 @@ async fn index() -> Result<String, Error> {
 }
 
 pub fn routes(cfg: &mut ServiceConfig) {
-    cfg.route("/", check(web::get(), has_min_role(Role::User), index))
-        .route(
-            "/admin",
-            check(
-                web::get(),
-                has_min_role(Role::Administrator),
-                administrators_index,
-            ),
-        )
-        .route(
-            "/mod",
-            check(web::get(), has_min_role(Role::Moderator), moderators_index),
-        );
+    cfg.route(
+        "/",
+        permission()
+            .check(web::get())
+            .validate(has_min_role(Role::User))
+            .to(index)
+            .build(),
+    )
+    .route(
+        "/admin",
+        permission()
+            .check(web::get())
+            .validate(has_min_role(Role::Administrator))
+            .to(administrators_index)
+            .build(),
+    )
+    .route(
+        "/mod",
+        permission()
+            .check(web::get())
+            .validate(has_min_role(Role::Moderator))
+            .to(moderators_index)
+            .build(),
+    );
 }

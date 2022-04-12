@@ -29,7 +29,7 @@ impl Permission<()> for IsAllowed {
 Dependencies:  
 ```toml
 [dependencies]
-actix-permissions = "1.0.0-beta.1"
+actix-permissions = "2.0.0"
 ```
 Code:
 ```rust
@@ -68,9 +68,16 @@ async fn index() -> Result<String, Error> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
-        App::new()
-            .app_data(Data::new(DummyService))
-            .service(web::scope("").route("/", check(web::get(), dummy_permission_check, index)))
+        App::new().app_data(Data::new(DummyService)).service(
+            web::scope("").route(
+                "/",
+                permission()
+                    .check(web::get())
+                    .validate(dummy_permission_check)
+                    .to(index)
+                    .build(),
+            ),
+        )
     })
         .bind("127.0.0.1:8888")?
         .run()
@@ -87,6 +94,11 @@ access service request, payload and injected services.
 By default, 403 is returned for failed permission checks. You may want to toggle between `Unauthorized` and `Forbidden`,
 maybe customize 403 forbidden messages. That's why `check_with_custom_deny` is for.
 Take a look at [role based authorization example](./examples/role-based-authorization) for more info.
+
+## Permission chaining
+Not implemented more than one. It's because how it's implemented in `service.rs`. For every
+`Permission` there's a `FromRequest` impl. Every `FromRequest` consumes `Payload`, so `Payload` needs
+to be `cloned` each time. If you have a need for permission chaining or have an idea, open a [new Issue](https://github.com/eisberg-labs/actix-permissions/issues/new).
 
 ## Contributing
 
