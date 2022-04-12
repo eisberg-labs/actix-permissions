@@ -1,7 +1,7 @@
 use crate::models::Role;
-use actix_permissions::check_with_custom_deny;
+use actix_permissions::builder::Builder;
 use actix_permissions::permission::Permission;
-use actix_web::{FromRequest, Handler, HttpMessage, HttpRequest, HttpResponse, Responder, Route};
+use actix_web::{FromRequest, Handler, HttpMessage, HttpRequest, HttpResponse, Responder};
 use std::future::{ready, Ready};
 
 #[derive(Clone)]
@@ -36,13 +36,13 @@ pub fn has_min_role(role: Role) -> RolePermissionCheck {
     RolePermissionCheck { role }
 }
 
-pub fn check<F, Args, P1, P1Args>(route: Route, permission: P1, handler: F) -> Route
+pub fn permission<F, Args, P1, P1Args>() -> Builder<F, Args, P1, P1Args>
 where
     F: Handler<Args>,
-    Args: FromRequest + 'static + Clone,
+    Args: FromRequest + 'static,
     P1: Permission<P1Args>,
-    P1Args: FromRequest + 'static + Clone,
+    P1Args: FromRequest + 'static,
     F::Output: Responder,
 {
-    check_with_custom_deny(route, permission, handler, custom_deny_handler)
+    actix_permissions::permission().with_deny_handler(custom_deny_handler)
 }
